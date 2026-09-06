@@ -1,0 +1,260 @@
+{
+  "summary_table": [
+    {
+      "Métrique": "Richesse spécifique (S)",
+      "Foret_B": 9,
+      "Lisiere_D": 10,
+      "Prairie_A": 9,
+      "Zone_Humide_C": 9
+    },
+    {
+      "Métrique": "Effectifs adultes (Ad)",
+      "Foret_B": 71,
+      "Lisiere_D": 119,
+      "Prairie_A": 76,
+      "Zone_Humide_C": 64
+    },
+    {
+      "Métrique": "Effectifs juvéniles (Juv)",
+      "Foret_B": 101,
+      "Lisiere_D": 114,
+      "Prairie_A": 115,
+      "Zone_Humide_C": 53
+    },
+    {
+      "Métrique": "Abondance relative (ind/piège/semaine)",
+      "Foret_B": 14.333,
+      "Lisiere_D": 18.747,
+      "Prairie_A": 15.917,
+      "Zone_Humide_C": 9.414
+    }
+  ],
+  "diversity_table": [
+    {
+      "Habitat_Station": "Foret_B",
+      "Richesse_Specifique": 9,
+      "Shannon_H": 1.911,
+      "Pielou_J": 0.87,
+      "_row": "Foret_B"
+    },
+    {
+      "Habitat_Station": "Lisiere_D",
+      "Richesse_Specifique": 10,
+      "Shannon_H": 2.217,
+      "Pielou_J": 0.963,
+      "_row": "Lisiere_D"
+    },
+    {
+      "Habitat_Station": "Prairie_A",
+      "Richesse_Specifique": 9,
+      "Shannon_H": 2.107,
+      "Pielou_J": 0.959,
+      "_row": "Prairie_A"
+    },
+    {
+      "Habitat_Station": "Zone_Humide_C",
+      "Richesse_Specifique": 9,
+      "Shannon_H": 2.161,
+      "Pielou_J": 0.983,
+      "_row": "Zone_Humide_C"
+    }
+  ],
+  "jaccard_matrix": [
+    {
+      "Habitat_Station": "Foret_B",
+      "Foret_B": 1,
+      "Lisiere_D": 0.9,
+      "Prairie_A": 0.8,
+      "Zone_Humide_C": 0.8
+    },
+    {
+      "Habitat_Station": "Lisiere_D",
+      "Foret_B": 0.9,
+      "Lisiere_D": 1,
+      "Prairie_A": 0.9,
+      "Zone_Humide_C": 0.9
+    },
+    {
+      "Habitat_Station": "Prairie_A",
+      "Foret_B": 0.8,
+      "Lisiere_D": 0.9,
+      "Prairie_A": 1,
+      "Zone_Humide_C": 0.8
+    },
+    {
+      "Habitat_Station": "Zone_Humide_C",
+      "Foret_B": 0.8,
+      "Lisiere_D": 0.9,
+      "Prairie_A": 0.8,
+      "Zone_Humide_C": 1
+    }
+  ],
+  "species_clusters": [
+    {
+      "Espèce": "Xysticus cristatus",
+      "Cluster": "1",
+      "Dim 1": -0.499,
+      "Dim 2": -0.628,
+      "Dim 3": -0.074,
+      "_row": "Agelena labyrinthica"
+    },
+    {
+      "Espèce": "Clubiona reclusa",
+      "Cluster": "2",
+      "Dim 1": 0.327,
+      "Dim 2": -0.247,
+      "Dim 3": 0.108,
+      "_row": "Alopecosa pulverulenta"
+    },
+    {
+      "Espèce": "Agelena labyrinthica",
+      "Cluster": "1",
+      "Dim 1": 0.363,
+      "Dim 2": -0.036,
+      "Dim 3": -0.074,
+      "_row": "Araneus diadematus"
+    },
+    {
+      "Espèce": "Pardosa lugubris",
+      "Cluster": "2",
+      "Dim 1": -0.125,
+      "Dim 2": 0.378,
+      "Dim 3": 0.141,
+      "_row": "Ozyptila atomaria"
+    },
+    {
+      "Espèce": "Textrix denticulata",
+      "Cluster": "2",
+      "Dim 1": 0.342,
+      "Dim 2": 0.213,
+      "Dim 3": 0.022,
+      "_row": "Pardosa amentata"
+    },
+    {
+      "Espèce": "Ozyptila atomaria",
+      "Cluster": "2",
+      "Dim 1": -0.316,
+      "Dim 2": 0.212,
+      "Dim 3": 0.058,
+      "_row": "Pardosa lugubris"
+    },
+    {
+      "Espèce": "Alopecosa pulverulenta",
+      "Cluster": "3",
+      "Dim 1": 0.75,
+      "Dim 2": -0.204,
+      "Dim 3": -0.007,
+      "_row": "Salticus scenicus"
+    },
+    {
+      "Espèce": "Pardosa amentata",
+      "Cluster": "3",
+      "Dim 1": -0.229,
+      "Dim 2": 0.245,
+      "Dim 3": -0.479,
+      "_row": "Textrix denticulata"
+    },
+    {
+      "Espèce": "Araneus diadematus",
+      "Cluster": "3",
+      "Dim 1": -0.627,
+      "Dim 2": -0.22,
+      "Dim 3": 0.11,
+      "_row": "Xysticus cristatus"
+    },
+    {
+      "Espèce": "Salticus scenicus",
+      "Cluster": "3",
+      "Dim 1": -0.591,
+      "Dim 2": 0.099,
+      "Dim 3": 0.033,
+      "_row": "Clubiona reclusa"
+    }
+  ],
+  "habitat_clusters": [
+    {
+      "Habitat": "Foret_B",
+      "Cluster": "3",
+      "Dim 1": 0.692,
+      "Dim 2": -0.241,
+      "Dim 3": -0.04,
+      "_row": "Foret_B"
+    },
+    {
+      "Habitat": "Lisiere_D",
+      "Cluster": "1",
+      "Dim 1": -0.513,
+      "Dim 2": -0.206,
+      "Dim 3": -0.075,
+      "_row": "Lisiere_D"
+    },
+    {
+      "Habitat": "Prairie_A",
+      "Cluster": "2",
+      "Dim 1": 0.053,
+      "Dim 2": 0.444,
+      "Dim 3": -0.08,
+      "_row": "Prairie_A"
+    },
+    {
+      "Habitat": "Zone_Humide_C",
+      "Cluster": "2",
+      "Dim 1": -0.084,
+      "Dim 2": 0.039,
+      "Dim 3": 0.338,
+      "_row": "Zone_Humide_C"
+    }
+  ],
+  "barber_family_summary": [
+    {
+      "Famille": "Agelenidae",
+      "nb_especes": 2,
+      "nb_individus": 56,
+      "pct_especes": 20,
+      "pct_individus": 13.63
+    },
+    {
+      "Famille": "Araneidae",
+      "nb_especes": 1,
+      "nb_individus": 50,
+      "pct_especes": 10,
+      "pct_individus": 12.17
+    },
+    {
+      "Famille": "Clubionidae",
+      "nb_especes": 1,
+      "nb_individus": 40,
+      "pct_especes": 10,
+      "pct_individus": 9.73
+    },
+    {
+      "Famille": "Lycosidae",
+      "nb_especes": 3,
+      "nb_individus": 134,
+      "pct_especes": 30,
+      "pct_individus": 32.6
+    },
+    {
+      "Famille": "Salticidae",
+      "nb_especes": 1,
+      "nb_individus": 65,
+      "pct_especes": 10,
+      "pct_individus": 15.82
+    },
+    {
+      "Famille": "Thomisidae",
+      "nb_especes": 2,
+      "nb_individus": 66,
+      "pct_especes": 20,
+      "pct_individus": 16.06
+    }
+  ],
+  "excel_file": "resultats_analyse.xlsx",
+  "plots": {
+    "afc_biplot": "afc_biplot.png",
+    "hcpc_species": "hcpc_species.png",
+    "hcpc_habitats": "hcpc_habitats.png",
+    "barber_species_pct": "barber_family_species_pct.png",
+    "barber_individuals_pct": "barber_family_individuals_pct.png"
+  }
+}
