@@ -1,0 +1,14 @@
+
+> mvb-frontend@0.1.0 dev
+> next dev -p 3000
+
+   ▲ Next.js 14.1.4
+   - Local:        http://localhost:3000
+
+ ✓ Ready in 1989ms
+ ○ Compiling / ...
+ ✓ Compiled / in 7s (725 modules)
+ ○ Compiling /login ...
+ ✓ Compiled /login in 947ms (725 modules)
+ ✓ Compiled /products in 463ms (747 modules)
+[?25h

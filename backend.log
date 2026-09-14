@@ -1,0 +1,27 @@
+INFO:     Started server process [104785]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:39570 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45912 - "POST /api/auth/token HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45912 - "OPTIONS /api/products HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45926 - "OPTIONS /api/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45934 - "OPTIONS /api/products HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45936 - "GET /api/products HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45912 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45934 - "GET /api/products HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52144 - "POST /api/auth/token HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52144 - "OPTIONS /api/products HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52156 - "OPTIONS /api/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52164 - "GET /api/products HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52144 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45020 - "POST /api/auth/token HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45020 - "OPTIONS /api/products HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45022 - "OPTIONS /api/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45032 - "GET /api/products HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45020 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33894 - "POST /api/auth/token HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33894 - "OPTIONS /api/products HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33896 - "OPTIONS /api/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33906 - "GET /api/products HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33894 - "GET /api/auth/me HTTP/1.1" 200 OK
