@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: mvb_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: mvb_user
+      POSTGRES_PASSWORD: mvb_password
+      POSTGRES_DB: mvb_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mvb_user -d mvb_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: mvb_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://mvb_user:mvb_password@postgres:5432/mvb_db
+      - SQLITE_URL=sqlite:///./mvb.db
+      - JWT_SECRET=mvb_secret_key_change_me_in_production_12345
+      - JWT_ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=1440
+      - AI_PROVIDER=openai
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-your_openai_api_key_here}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-your_gemini_api_key_here}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "python3 seed.py && uvicorn backend.main:app --host 0.0.0.0 --port 8000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: mvb_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
