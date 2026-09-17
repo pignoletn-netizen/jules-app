@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShortsFactory - Studio de Création Automatique de YouTube Shorts</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-border {
+            background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 gradient-border rounded-xl">
+                    <i class="fa-solid fa-clapperboard text-2xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                        ShortsFactory AI
+                    </h1>
+                    <p class="text-xs text-slate-400">Générateur Automatique de YouTube Shorts</p>
+                </div>
+            </div>
+            <span class="px-3 py-1 bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-full text-xs font-semibold">
+                v3.0 - Studio Complet
+            </span>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+        <!-- Left Panel: Controls -->
+        <section class="lg:col-span-6 space-y-6">
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <h2 class="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles text-indigo-400"></i>
+                    Création de la Vidéo
+                </h2>
+
+                <form id="generateForm" class="space-y-5">
+                    <!-- Subject or Raw Text -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-2">
+                            Sujet de tendance OU Texte brut du script
+                        </label>
+                        <textarea id="inputTopicText" rows="4" required
+                            placeholder="Exemple : 'Les 3 secrets de l'IA en 2026' OU colle ton script brut complet ici..."
+                            class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition-colors"></textarea>
+                    </div>
+
+                    <!-- AI Model Provider -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Modèle d'IA (Script)</label>
+                            <select id="providerSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-200">
+                                <option value="groq">Groq (Llama 3.3 70B)</option>
+                                <option value="gemini">Google Gemini 1.5 Flash</option>
+                            </select>
+                        </div>
+
+                        <!-- Voice Engine -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Moteur Synthèse Vocale (TTS)</label>
+                            <select id="voiceSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-200">
+                                <option value="fr-FR-VivienneNeural">Edge-TTS (Vivienne - Gratuit)</option>
+                                <option value="fr-FR-HenriNeural">Edge-TTS (Henri - Gratuit)</option>
+                                <option value="elevenlabs">ElevenLabs (Pro)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Generate Button -->
+                    <button type="submit" id="btnGenerate"
+                        class="w-full py-3.5 px-6 rounded-xl font-semibold text-white gradient-border hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20">
+                        <i class="fa-solid fa-circle-play"></i>
+                        <span>Générer la vidéo Shorts</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Status Logs Box -->
+            <div id="statusCard" class="hidden bg-slate-900/60 border border-slate-800 rounded-2xl p-5">
+                <div class="flex items-center gap-3">
+                    <div id="statusSpinner" class="animate-spin rounded-full h-5 w-5 border-2 border-indigo-400 border-t-transparent"></div>
+                    <span id="statusMessage" class="text-sm font-medium text-slate-300">Initialisation du pipeline...</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Panel: Preview & Publication -->
+        <section class="lg:col-span-6 space-y-6">
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col items-center justify-center min-h-[450px]">
+                <h2 class="text-lg font-semibold text-slate-200 mb-4 w-full flex items-center gap-2">
+                    <i class="fa-solid fa-mobile-screen-button text-purple-400"></i>
+                    Aperçu Rendu 9:16 (Shorts)
+                </h2>
+
+                <!-- Video Player Container -->
+                <div id="playerContainer" class="w-full max-w-[280px] aspect-[9/16] bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden flex items-center justify-center relative shadow-2xl">
+                    <video id="videoPreview" controls class="w-full h-full object-cover hidden">
+                        Votre navigateur ne supporte pas la lecture de vidéo.
+                    </video>
+                    <div id="playerPlaceholder" class="text-center p-6 space-y-3">
+                        <i class="fa-solid fa-film text-4xl text-slate-700"></i>
+                        <p class="text-xs text-slate-500">La vidéo générée s'affichera ici au format vertical HD 1080x1920.</p>
+                    </div>
+                </div>
+
+                <!-- Video Info -->
+                <div id="videoMeta" class="w-full mt-4 p-3 bg-slate-950/60 border border-slate-800 rounded-xl text-xs space-y-1 text-slate-400 hidden">
+                    <p><strong class="text-slate-200">Durée :</strong> <span id="metaDuration">-</span> sec</p>
+                    <p><strong class="text-slate-200">Résolution :</strong> <span id="metaResolution">1080x1920</span></p>
+                    <p class="truncate"><strong class="text-slate-200">Fichier :</strong> <span id="metaPath">-</span></p>
+                </div>
+            </div>
+
+            <!-- YouTube Publication Panel -->
+            <div id="youtubePanel" class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl hidden">
+                <h3 class="text-md font-semibold text-slate-200 mb-3 flex items-center gap-2">
+                    <i class="fa-brands fa-youtube text-red-500 text-xl"></i>
+                    Publication Directe sur YouTube
+                </h3>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Titre de la vidéo</label>
+                        <input type="text" id="ytTitle" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-200">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Statut de confidentialité</label>
+                        <select id="ytPrivacy" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-200">
+                            <option value="private">Privée (Private)</option>
+                            <option value="unlisted">Non répertoriée (Unlisted)</option>
+                            <option value="public">Publique (Public)</option>
+                        </select>
+                    </div>
+
+                    <button id="btnPublishYT"
+                        class="w-full py-3 px-4 rounded-xl font-semibold bg-red-600 hover:bg-red-500 text-white transition-colors flex items-center justify-center gap-2 shadow-lg shadow-red-600/20">
+                        <i class="fa-solid fa-upload"></i>
+                        <span>Publier sur YouTube</span>
+                    </button>
+                </div>
+
+                <!-- Result Notice -->
+                <div id="ytResult" class="mt-4 p-3 rounded-xl text-xs hidden"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 py-4 text-center text-xs text-slate-500">
+        ShortsFactory AI Platform &copy; 2026 - Propulsé par FastAPI, Llama 3.3, Edge-TTS & FFmpeg
+    </footer>
+
+    <!-- App JavaScript -->
+    <script>
+        let currentVideoPath = "";
+
+        document.getElementById("generateForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const inputVal = document.getElementById("inputTopicText").value.trim();
+            const provider = document.getElementById("providerSelect").value;
+            const voice = document.getElementById("voiceSelect").value;
+
+            if (!inputVal) return;
+
+            const btnGenerate = document.getElementById("btnGenerate");
+            const statusCard = document.getElementById("statusCard");
+            const statusMessage = document.getElementById("statusMessage");
+
+            btnGenerate.disabled = true;
+            btnGenerate.classList.add("opacity-50");
+            statusCard.classList.remove("hidden");
+            statusMessage.innerText = "Génération du script, de l'audio, des clips et du montage MP4 en cours...";
+
+            try {
+                // Determine if input is topic or raw script
+                const payload = {};
+                if (inputVal.length > 80 || inputVal.includes("\n")) {
+                    payload.text = inputVal;
+                } else {
+                    payload.topic = inputVal;
+                }
+                payload.provider = provider;
+                if (voice !== "elevenlabs") payload.voice = voice;
+
+                const response = await fetch("/api/v1/video/generate-full", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.video_path) {
+                    currentVideoPath = data.video_path;
+
+                    // Display Video
+                    const videoPreview = document.getElementById("videoPreview");
+                    const playerPlaceholder = document.getElementById("playerPlaceholder");
+                    const videoMeta = document.getElementById("videoMeta");
+
+                    videoPreview.src = "/media-file?path=" + encodeURIComponent(data.video_path);
+                    videoPreview.classList.remove("hidden");
+                    playerPlaceholder.classList.add("hidden");
+
+                    document.getElementById("metaDuration").innerText = data.duration_seconds;
+                    document.getElementById("metaPath").innerText = data.video_path;
+                    videoMeta.classList.remove("hidden");
+
+                    // Prepare YouTube Panel
+                    document.getElementById("ytTitle").value = (data.topic_or_text || "Mon Short AI") + " #Shorts";
+                    document.getElementById("youtubePanel").classList.remove("hidden");
+
+                    statusMessage.innerText = "✨ Vidéo générée avec succès !";
+                } else {
+                    statusMessage.innerText = "⚠️ Erreur : " + (data.detail || "Échec de la génération.");
+                }
+            } catch (err) {
+                statusMessage.innerText = "❌ Erreur réseau : " + err.message;
+            } finally {
+                btnGenerate.disabled = false;
+                btnGenerate.classList.remove("opacity-50");
+            }
+        });
+
+        document.getElementById("btnPublishYT").addEventListener("click", async () => {
+            if (!currentVideoPath) return;
+
+            const title = document.getElementById("ytTitle").value;
+            const privacy = document.getElementById("ytPrivacy").value;
+            const btnPublish = document.getElementById("btnPublishYT");
+            const ytResult = document.getElementById("ytResult");
+
+            btnPublish.disabled = true;
+            btnPublish.innerText = "Publication en cours...";
+
+            try {
+                const response = await fetch("/api/v1/youtube/upload", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        video_path: currentVideoPath,
+                        title: title,
+                        privacy_status: privacy
+                    })
+                });
+
+                const data = await response.json();
+                ytResult.classList.remove("hidden");
+
+                if (response.ok && data.success) {
+                    ytResult.className = "mt-4 p-3 rounded-xl text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                    ytResult.innerHTML = `🎉 Publié avec succès ! <a href="${data.youtube_url}" target="_blank" class="underline font-bold">Voir sur YouTube</a> (${data.source})`;
+                } else {
+                    ytResult.className = "mt-4 p-3 rounded-xl text-xs bg-rose-500/10 text-rose-400 border border-rose-500/20";
+                    ytResult.innerText = "⚠️ Erreur : " + (data.detail || "Échec de la publication.");
+                }
+            } catch (err) {
+                ytResult.classList.remove("hidden");
+                ytResult.className = "mt-4 p-3 rounded-xl text-xs bg-rose-500/10 text-rose-400 border border-rose-500/20";
+                ytResult.innerText = "❌ Erreur : " + err.message;
+            } finally {
+                btnPublish.disabled = false;
+                btnPublish.innerHTML = `<i class="fa-solid fa-upload"></i><span>Publier sur YouTube</span>`;
+            }
+        });
+    </script>
+</body>
+</html>

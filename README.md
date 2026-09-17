@@ -1,126 +1,101 @@
-# Plateforme MVB (Mini-Market Validation Business)
+# ShortsFactory - Générateur Automatique de YouTube Shorts
 
-Application web complète de gestion, sourcing, validation de marché, marketing IA, SAV automatique et suivi financier pour business MVB / Semi-Marque.
-
----
-
-## 🚀 Architecture & Stack Technique
-
-- **Backend** : FastAPI (Python 3.11+) + SQLAlchemy + Pydantic v2
-- **Frontend** : Next.js 14 App Router (React, TypeScript, Tailwind CSS, Lucide React)
-- **Base de données** : PostgreSQL (avec fallback automatique sur SQLite local `mvb.db` si PostgreSQL n'est pas détecté)
-- **Authentification** : Tokens JWT (OAuth2 Bearer, hachage PBKDF2/Bcrypt)
-- **Intelligence Artificielle** : Intégration modulaire OpenAI API / Gemini API avec fallbacks automatiques
-- **Containerisation** : Docker & Docker Compose
+**ShortsFactory** est une application Python / FastAPI complète conçue pour générer automatiquement des YouTube Shorts viraux au format vertical 9:16 (1080x1920) avec sous-titres dynamiques et publication sur YouTube.
 
 ---
 
-## 🛠️ Modules Fonctionnels Implémentés
+## 🎬 Fonctionnalités Principales (Phases 1 à 4)
 
-1. **Repérage Produits & Filtres Qualité (Product Hunting)**
-   - Score de Viabilité automatique (0-100) basé sur la marge estimée, le volume de recherche, la concurrence et les pénalités de risque.
-   - Filtres de risque (complexité, fragilité, note client).
+1. **Phase 1 - Analyse de Tendances & Restructuration** :
+   - Recherche des top 5 Shorts YouTube les plus vus via `yt-dlp`.
+   - Génération de scripts viraux de moins de 60 secondes avec Groq (Llama 3.3 70B) ou Gemini (Gemini 1.5 Flash).
+   - Découpage du script en tableau JSON structuré (phrases, pauses en ms, mots-clés de recherche en anglais).
 
-2. **Sourcing & Vérification Fournisseurs Fiables**
-   - Annuaire dynamique (Alibaba, Grossistes, Agents).
-   - Algorithme Badge "Fiable" (Ancienneté ≥ 3 ans, Verified Supplier, Taux de réponse > 90%).
-   - Tableau comparatif : Prix unitaire, MOQ, Frais de port, Délais et Coût de personnalisation.
+2. **Phase 2 - Moteur TTS & Médias Visuels Gratuits** :
+   - Génération audio de voix off synthétique via l'API ElevenLabs avec fallback gratuit et illimité via `edge-tts` (Microsoft Edge TTS).
+   - Assemblage des extraits audio avec pauses réglables via `pydub`.
+   - Récupération automatique de clips vidéos HD au format portrait 9:16 via Pexels API (avec fallback Pixabay API).
+   - Téléchargement d'une piste de musique d'ambiance libre de droits.
 
-3. **Validation de Marché (MVB Core) & Landing Page**
-   - Générateur de structure de Landing Page haute conversion par IA (titres, arguments de vente, FAQ, CTA).
-   - Compteur d'intention d'achat en temps réel (suivi des clics CTA & e-mails capturés sur `/p/[slug]`).
+3. **Phase 3 - Montage Vidéo & Sous-titres Dynamiques** :
+   - Génération de sous-titres dynamiques au format `.ASS` (1 à 3 mots par apparition, style TikTok / Shorts : police jaune/blanche avec bordure noire centré en bas).
+   - Redimensionnement et recadrage vertical 1080x1920.
+   - Mixage audio de la voix off principale et de la musique de fond ajustée à -22dB.
+   - Incrustation des sous-titres dynamiques et rendu MP4 via FFmpeg.
 
-4. **Conformité & Normes Européennes**
-   - Checklist réglementaire automatique selon la catégorie de produit (Marquage CE, RoHS, étiquetage en français).
-   - Suivi des documents d'importation (Certificats, numéro EORI, factures douanières).
-
-5. **Marketing & Publicité (Génération IA)**
-   - Scripts Vidéo TikTok / Reels / Shorts en 4 parties (Hook, Problème, Solution, CTA).
-   - Textes publicitaires (Meta Ads & TikTok Ads).
-   - Guide Media-Buying : Checklist interactive pas-à-pas pour la configuration des Pixels et du Business Manager.
-
-6. **SAV & Gestion Client**
-   - Générateur de réponses automatiques IA aux e-mails clients récurrents (livraison, retours, remboursements, questions).
-   - Historique des réponses par produit.
-
-7. **Dashboard Financier & Calculateur de Marge Nette**
-   - Formule en temps réel :
-     `Marge Nette = Prix Vente - (COGS + Transport/Douane + CAC/Pub + Frais Stripe/PayPal + Cotisations Sociales 12.3%)`
+4. **Phase 4 - Interface Web & Publication YouTube API** :
+   - Dashboard web interactif servi directement par FastAPI sur `http://localhost:8000/`.
+   - Publication directe sur YouTube via l'API YouTube Data v3 (OAuth2) avec titre optimisé et hashtags (`#Shorts`).
 
 ---
 
-## 📦 1. Installation Locale Standard
+## ⚙️ Prérequis & Installation
 
-### Prérequis
+### Prérequis Système
 - Python 3.11+
-- Node.js 18+ / npm
+- FFmpeg (embarqué automatiquement via la dépendance Python `imageio-ffmpeg` ou installé sur le système)
 
-### Étape 1 : Backend (FastAPI)
+### Installation des Dépendances
 ```bash
-# Se placer à la racine du projet
+# Copier le fichier de configuration d'environnement
 cp .env.example .env
 
 # Installer les dépendances Python
-pip install -r backend/requirements.txt
-
-# Lancer le serveur backend
-python3 -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+pip install -r requirements.txt
 ```
-L'API Swagger interactive est disponible sur : `http://localhost:8000/docs`
-
-### Étape 2 : Frontend (Next.js)
-```bash
-# Se placer dans le dossier frontend
-cd frontend
-
-# Installer les dépendances Node.js
-npm install
-
-# Lancer le serveur de développement Next.js
-npm run dev
-```
-L'application web est accessible sur : `http://localhost:3000`
 
 ---
 
-## 🌱 2. Procédure d'exécution du Script `seed.py`
+## 🔑 Configuration des Clés API (`.env`)
 
-Le script `seed.py` permet d'alimenter immédiatement la base de données avec 3 produits réels complets, leurs fournisseurs associés, checklists de conformité, scripts marketing et données financières.
+Renseignez vos clés d'API dans le fichier `.env` :
 
-```bash
-# Exécuter depuis la racine du projet
-PYTHONPATH=. python3 seed.py
+```env
+GROQ_API_KEY=votre_cle_groq
+GEMINI_API_KEY=votre_cle_gemini
+ELEVENLABS_API_KEY=votre_cle_elevenlabs
+PEXELS_API_KEY=votre_cle_pexels
+PIXABAY_API_KEY=votre_cle_pixabay
 ```
 
-### Identifiants du Compte Démo :
-- **E-mail** : `admin@mvb-platform.com`
-- **Mot de passe** : `admin123456`
+*Note : ShortsFactory fonctionne également en mode démo avec des fallbacks automatiques si certaines clés ne sont pas renseignées.*
 
 ---
 
-## 🐳 3. Exécution avec Docker Compose
+## 🚀 Lancement de l'Application
 
-Pour orchestrer le Backend FastAPI, le Frontend Next.js et la Base de Données PostgreSQL en une seule commande :
+Pour démarrer le serveur FastAPI et l'interface Web :
 
 ```bash
-# Lancer l'ensemble des conteneurs
-docker-compose up --build
+uvicorn main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-L'application sera opérationnelle sur :
-- **Frontend Next.js** : `http://localhost:3000`
-- **Backend FastAPI** : `http://localhost:8000`
-- **Documentation Swagger** : `http://localhost:8000/docs`
-- **PostgreSQL** : `localhost:5432`
+Accédez ensuite aux interfaces :
+- **Dashboard Web** : `http://localhost:8000/`
+- **Documentation API Interactive (Swagger)** : `http://localhost:8000/docs`
+
+---
+
+## 📡 Endpoints FastAPI Récapitulatifs
+
+| Méthode | Route | Description |
+|---|---|---|
+| `GET` | `/` | Dashboard Web interactif |
+| `POST` | `/api/v1/script/from-trend` | Recherche YouTube & génération de script AI |
+| `POST` | `/api/v1/script/process-text` | Découpe de texte en JSON (phrases + pauses + keywords) |
+| `POST` | `/api/v1/audio/generate` | Génération de la piste audio combinée avec silences |
+| `POST` | `/api/v1/media/fetch` | Récupération des vidéos portrait 9:16 et de la musique |
+| `POST` | `/api/v1/video/generate-full` | Orchestration complète (Script -> Audio -> Médias -> Montage MP4) |
+| `POST` | `/api/v1/youtube/upload` | Publication de la vidéo MP4 sur YouTube |
 
 ---
 
 ## 🧪 Exécution des Tests Automatisés
 
 ```bash
-# Lancer la suite de tests unitaires backend (pytest)
-PYTHONPATH=. python3 -m pytest backend/tests/
+# Lancer les tests unitaires ShortsFactory
+python3 -m pytest tests/
 
-# Lancer la vérification de build frontend
-cd frontend && npm run build
+# Lancer l'ensemble des tests (ShortsFactory + Plateforme MVB)
+python3 -m pytest tests/ backend/tests/
 ```

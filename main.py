@@ -1,7 +1,10 @@
 import os
 from typing import Any, Dict, List, Optional
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
 from services.audio_service import generate_audio_for_script
@@ -10,11 +13,12 @@ from services.subtitle_service import generate_ass_subtitles
 from services.text_service import ScriptSegment, restructure_text_with_pacing
 from services.trend_service import generate_script_from_trend
 from services.video_service import render_final_video
+from services.youtube_service import upload_video_to_youtube
 
 app = FastAPI(
     title="ShortsFactory API",
-    description="Application d'analyse de tendances YouTube, de génération de scripts, moteur TTS audio, médias visuels et montage vidéo autonome.",
-    version="3.0.0",
+    description="Application d'analyse de tendances YouTube, génération de scripts, moteur TTS audio, médias visuels, montage vidéo et publication YouTube.",
+    version="4.0.0",
 )
 
 app.add_middleware(
@@ -25,8 +29,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+os.makedirs("static", exist_ok=True)
+os.makedirs("templates", exist_ok=True)
+os.makedirs("downloads", exist_ok=True)
 
-# --- Phase 1 Schemas ---
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
+
+# --- Schemas ---
 
 
 class TrendScriptRequest(BaseModel):
@@ -56,9 +67,6 @@ class ProcessTextRequest(BaseModel):
     provider: Optional[str] = Field(
         None, description="Fournisseur LLM facultatif ('groq' ou 'gemini')"
     )
-
-
-# --- Phase 2 Schemas ---
 
 
 class AudioGenerateRequest(BaseModel):
@@ -117,9 +125,6 @@ class MediaFetchResponse(BaseModel):
     background_music: BackgroundMusicInfo
 
 
-# --- Phase 3 Schemas ---
-
-
 class GenerateFullVideoRequest(BaseModel):
     topic: Optional[str] = Field(
         None, description="Sujet de recherche YouTube (optionnel si texte fourni)"
@@ -149,12 +154,45 @@ class GenerateFullVideoResponse(BaseModel):
     segment_count: int
 
 
-# --- Endpoints ---
+class YouTubeUploadRequest(BaseModel):
+    video_path: str = Field(..., description="Chemin du fichier vidéo MP4 à uploader")
+    title: Optional[str] = Field("Shorts AI", description="Titre de la vidéo")
+    description: Optional[str] = Field("", description="Description de la vidéo")
+    privacy_status: Optional[str] = Field(
+        "private", description="Statut de confidentialité : private, unlisted ou public"
+    )
 
 
-@app.get("/health")
+class YouTubeUploadResponse(BaseModel):
+    success: bool
+    video_id: str
+    youtube_url: str
+    privacy_status: str
+    title: str
+    description: str
+    source: str
+    note: Optional[str] = None
+
+
+# --- Web Routes & Endpoints ---
+
+
+@app.get("/", response_class=HTMLResponse, summary="Interface Web Dashboard")
+def render_index_page(request: Request):
+    return templates.TemplateResponse(request=request, name="index.html")
+
+
+@app.get("/health", summary="Healthcheck")
 def health_check():
     return {"status": "ok", "app": "ShortsFactory API"}
+
+
+@app.get("/media-file", summary="Stream local generated media files")
+def stream_media_file(path: str):
+    if not path or not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="Fichier introuvable.")
+    media_type = "video/mp4" if path.endswith(".mp4") else "audio/wav"
+    return FileResponse(path, media_type=media_type)
 
 
 # Phase 1 Endpoints
@@ -281,7 +319,6 @@ def generate_full_video_endpoint(payload: GenerateFullVideoRequest):
     os.makedirs(out_dir, exist_ok=True)
 
     try:
-        # 1. Script Generation / Choice
         if payload.text and payload.text.strip():
             script = payload.text.strip()
             topic_or_text = script[:30] + "..."
@@ -292,10 +329,8 @@ def generate_full_video_endpoint(payload: GenerateFullVideoRequest):
             script = trend_res["script"]
             topic_or_text = payload.topic.strip()
 
-        # 2. Text Restructuring & Pacing
         segments = restructure_text_with_pacing(text=script, provider=payload.provider)
 
-        # 3. Audio TTS Generation
         audio_out_path = os.path.join(out_dir, "voice_audio.wav")
         audio_res = generate_audio_for_script(
             segments=segments,
@@ -303,17 +338,14 @@ def generate_full_video_endpoint(payload: GenerateFullVideoRequest):
             voice=payload.voice or "fr-FR-VivienneNeural",
         )
 
-        # 4. Media Fetching (Pexels / Pixabay)
         media_res = fetch_media_for_script(segments=segments, output_dir=out_dir)
 
-        # 5. Dynamic ASS Subtitles Generation
         ass_out_path = os.path.join(out_dir, "subtitles.ass")
         subtitles_path = generate_ass_subtitles(
             segment_timings=audio_res["segment_timings"],
             output_filename=ass_out_path,
         )
 
-        # 6. Video Rendering & Assembly
         final_mp4_path = os.path.join(out_dir, "final_short.mp4")
         video_res = render_final_video(
             clips_info=media_res["downloaded_clips"],
@@ -338,6 +370,40 @@ def generate_full_video_endpoint(payload: GenerateFullVideoRequest):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur lors de la génération complète de la vidéo : {str(e)}",
+        )
+
+
+# Phase 4 YouTube Publication Endpoint
+@app.post(
+    "/api/v1/youtube/upload",
+    response_model=YouTubeUploadResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Publie directement une vidéo MP4 sur une chaîne YouTube via l'API YouTube Data v3",
+)
+def upload_youtube_endpoint(payload: YouTubeUploadRequest):
+    if not payload.video_path or not payload.video_path.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Le chemin 'video_path' est obligatoire.",
+        )
+
+    try:
+        result = upload_video_to_youtube(
+            video_path=payload.video_path.strip(),
+            title=payload.title or "Mon Short AI",
+            description=payload.description or "",
+            privacy_status=payload.privacy_status or "private",
+        )
+        return result
+    except FileNotFoundError as fnf:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(fnf),
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur lors de la publication YouTube : {str(e)}",
         )
 
 
