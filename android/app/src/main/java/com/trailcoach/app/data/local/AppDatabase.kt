@@ -9,14 +9,27 @@ import com.trailcoach.app.data.local.entity.UserEntity
 import com.trailcoach.app.data.local.entity.WorkoutSessionEntity
 
 /**
- * Implémentation en mémoire/fictive de AppDatabase pour orchestrer UserDao, PlanDao et ActivityDao.
- * Prêt pour l'annotation @Database(entities = [UserEntity::class, GoalEntity::class, WorkoutSessionEntity::class, ActivityEntity::class], version = 1)
+ * Interface d'abstraction de la base de données Room.
  */
-class AppDatabase(
-    val userDao: UserDao = InMemoryUserDao(),
-    val planDao: PlanDao = InMemoryPlanDao(),
-    val activityDao: ActivityDao = InMemoryActivityDao()
-)
+abstract class AppDatabase {
+    abstract fun userDao(): UserDao
+    abstract fun planDao(): PlanDao
+    abstract fun activityDao(): ActivityDao
+
+    companion object {
+        fun createInMemoryDatabase(): AppDatabase {
+            val user = InMemoryUserDao()
+            val plan = InMemoryPlanDao()
+            val activity = InMemoryActivityDao()
+
+            return object : AppDatabase() {
+                override fun userDao(): UserDao = user
+                override fun planDao(): PlanDao = plan
+                override fun activityDao(): ActivityDao = activity
+            }
+        }
+    }
+}
 
 class InMemoryUserDao : UserDao {
     private val users = mutableMapOf<String, UserEntity>()
@@ -33,6 +46,7 @@ class InMemoryPlanDao : PlanDao {
     override fun insertGoal(goal: GoalEntity) { goals.add(goal) }
 
     override fun getSessionsForPlan(planId: String): List<WorkoutSessionEntity> = sessions.filter { it.planId == planId }
+
     override fun getSessionsByCategory(planId: String, category: String): List<WorkoutSessionEntity> =
         sessions.filter { it.planId == planId && it.sessionCategory == category }
 

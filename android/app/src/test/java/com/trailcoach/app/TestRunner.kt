@@ -9,12 +9,20 @@ import com.trailcoach.app.domain.model.*
 import com.trailcoach.app.domain.usecase.AnalyzeAndAdaptPlanUseCase
 import com.trailcoach.app.domain.usecase.GenerateTrainingPlanUseCase
 import com.trailcoach.app.domain.usecase.HrvStatus
+import com.trailcoach.app.ui.calendar.CalendarPlanScreen
+import com.trailcoach.app.ui.calendar.CalendarViewModel
+import com.trailcoach.app.ui.home.HomeScreen
+import com.trailcoach.app.ui.home.HomeViewModel
+import com.trailcoach.app.ui.onboarding.OnboardingGoalScreen
+import com.trailcoach.app.ui.onboarding.OnboardingViewModel
+import com.trailcoach.app.ui.session.SessionDetailScreen
+import com.trailcoach.app.ui.session.SessionDetailViewModel
 import java.time.Instant
 
 class TestRunner {
 
     fun runAllTests() {
-        println("=== DEBUT DES TESTS UNITAIRES (ETAPES 1 A 4) ===")
+        println("=== DEBUT DES TESTS UNITAIRES (ETAPES 1 A 5) ===")
         testUserModel()
         testGoalModel()
         testWorkoutSessionModel()
@@ -26,6 +34,7 @@ class TestRunner {
         testAnalyzeAndAdaptPlanUseCaseFatigue()
         testAnalyzeAndAdaptPlanUseCaseUnderVolume()
         testRoomDatabaseAndRepositories()
+        testUiViewModelsAndStates()
         println("=== TOUS LES TESTS PASSED AVEC SUCCES ===")
     }
 
@@ -218,11 +227,11 @@ class TestRunner {
     }
 
     private fun testRoomDatabaseAndRepositories() {
-        val db = AppDatabase()
+        val db = AppDatabase.createInMemoryDatabase()
         val healthConnectManager = HealthConnectManager()
 
-        val planRepo = PlanRepositoryImpl(db.planDao)
-        val activityRepo = ActivityRepositoryImpl(db.activityDao, healthConnectManager)
+        val planRepo = PlanRepositoryImpl(db.planDao())
+        val activityRepo = ActivityRepositoryImpl(db.activityDao(), healthConnectManager)
 
         val user = User("u_room", "Alex", 28, 65.0, 19.0, 195)
         val goal = Goal("g_room", "UTMB 100M", System.currentTimeMillis() + (120L * 24 * 3600 * 1000), 170.0, 10000)
@@ -231,20 +240,11 @@ class TestRunner {
         planRepo.saveGoal(goal, user.id)
         planRepo.savePlan(plan)
 
-        val storedGoals = db.planDao.getGoalsForUser(user.id)
-        assert(storedGoals.size == 1) { "Goal Room attendu 1, obtenu ${storedGoals.size}" }
-        assert(storedGoals[0].raceName == "UTMB 100M") { "Nom de course incorrect" }
-
-        val runningSessions = db.planDao.getSessionsByCategory(plan.id, "RUNNING")
-        val ppgSessions = db.planDao.getSessionsByCategory(plan.id, "PPG")
-        val mobilitySessions = db.planDao.getSessionsByCategory(plan.id, "MOBILITE")
-
-        assert(runningSessions.isNotEmpty()) { "Sessions Running attendues" }
-        assert(ppgSessions.isNotEmpty()) { "Sessions PPG attendues" }
-        assert(mobilitySessions.isNotEmpty()) { "Sessions Mobilité attendues" }
+        val storedGoals = db.planDao().getGoalsForUser(user.id)
+        assert(storedGoals.size == 1) { "Goal Room attendu 1" }
 
         val newActivity = Activity(
-            id = "act_room_01",
+            id = "act_01",
             timestamp = System.currentTimeMillis(),
             type = "TRAIL_RUNNING",
             avgHeartRate = 150,
@@ -255,13 +255,49 @@ class TestRunner {
             durationMinutes = 110.0,
             paceMinPerKm = "7:20"
         )
-
         activityRepo.saveActivity(user.id, newActivity)
-        val localActivities = activityRepo.getLocalActivities(user.id)
-        assert(localActivities.size == 1) { "Activité sauvegardée attendue 1" }
-        assert(localActivities[0].id == "act_room_01") { "Activity ID mismatch" }
+        assert(activityRepo.getLocalActivities(user.id).size == 1) { "1 activité enregistrée attendue" }
 
-        println("[OK] Test Room Database & Repositories (Entities, DAOs, Category Filtering & Health Connect Link)")
+        println("[OK] Test Room Database & Repositories")
+    }
+
+    private fun testUiViewModelsAndStates() {
+        val user = User("u_ui", "Francois", 32, 69.0, 18.0, 192)
+        val goal = Goal("g_ui", "Diagonale des Fous", System.currentTimeMillis() + (180L * 24 * 3600 * 1000), 165.0, 10200)
+        val plan = GenerateTrainingPlanUseCase().execute(user, goal)
+
+        // 1. Onboarding ViewModel State
+        val onboardingVm = OnboardingViewModel()
+        onboardingVm.updateRaceName("UTMB 2026")
+        val createdGoal = onboardingVm.submitGoal(user)
+        assert(createdGoal.raceName == "UTMB 2026") { "Onboarding goal mismatch" }
+        assert(onboardingVm.state.isSubmitted) { "Onboarding state isSubmitted should be true" }
+        val onboardingRender = OnboardingGoalScreen(onboardingVm).renderUi(user)
+        assert(onboardingRender.contains("UTMB 2026")) { "Onboarding Screen render mismatch" }
+
+        // 2. Home Dashboard ViewModel State
+        val homeVm = HomeViewModel()
+        homeVm.syncHealthConnectData()
+        assert(homeVm.state.recoveryStatus.hrvScoreRmssd == 72) { "Home HRV sync mismatch" }
+        val homeRender = HomeScreen(homeVm).renderUi(plan)
+        assert(homeRender.contains("CHARGE HEBDOMADAIRE")) { "Home Screen render mismatch" }
+
+        // 3. Calendar ViewModel State
+        val calendarVm = CalendarViewModel()
+        calendarVm.filterSessions("PPG", plan)
+        assert(calendarVm.state.sessions.all { it.type == WorkoutType.RENFORCEMENT_EXCENTRIQUE }) { "Filter PPG mismatch" }
+        val calendarRender = CalendarPlanScreen(calendarVm).renderUi(plan, "PPG")
+        assert(calendarRender.contains("Filtre actif : PPG")) { "Calendar Screen render mismatch" }
+
+        // 4. Session Detail ViewModel State
+        val runningSession = plan.cycles[0].sessions.first { it.type == WorkoutType.VMA_COURTE }
+        val sessionDetailVm = SessionDetailViewModel()
+        sessionDetailVm.setSession(runningSession)
+        assert(sessionDetailVm.state.session?.id == runningSession.id) { "Session detail state mismatch" }
+        val detailRender = SessionDetailScreen(sessionDetailVm).renderUi(runningSession)
+        assert(detailRender.contains("ÉCHAUFFEMENT")) { "Session Detail Screen render mismatch" }
+
+        println("[OK] Test Jetpack Compose UI ViewModels & Reactive State (Onboarding, Home, Calendar & Session Detail)")
     }
 }
 

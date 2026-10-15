@@ -5,7 +5,6 @@ import com.trailcoach.app.data.local.entity.WorkoutSessionEntity
 
 /**
  * Interface DAO pour la gestion du plan d'entraînement, des objectifs et des séances.
- * Conçu pour retourner des résultats réactifs sous forme de listes/Flow.
  */
 interface PlanDao {
     fun getGoalsForUser(userId: String): List<GoalEntity>
@@ -13,6 +12,7 @@ interface PlanDao {
 
     fun getSessionsForPlan(planId: String): List<WorkoutSessionEntity>
     fun getSessionsByCategory(planId: String, category: String): List<WorkoutSessionEntity>
+
     fun insertSessions(sessions: List<WorkoutSessionEntity>)
     fun updateSession(session: WorkoutSessionEntity)
 }

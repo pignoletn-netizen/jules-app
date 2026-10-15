@@ -2,8 +2,6 @@ package com.trailcoach.app.data.local.entity
 
 /**
  * Entité Room pour une séance d'entraînement.
- *
- * @property sessionCategory Category of session: "RUNNING", "PPG", or "MOBILITE"
  */
 data class WorkoutSessionEntity(
     val id: String,
