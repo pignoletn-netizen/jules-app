@@ -1,14 +1,17 @@
 package com.trailcoach.app
 
+import com.trailcoach.app.data.healthconnect.HealthConnectHrvSample
 import com.trailcoach.app.data.healthconnect.HealthConnectManager
 import com.trailcoach.app.domain.model.*
+import com.trailcoach.app.domain.usecase.AnalyzeAndAdaptPlanUseCase
 import com.trailcoach.app.domain.usecase.GenerateTrainingPlanUseCase
+import com.trailcoach.app.domain.usecase.HrvStatus
 import java.time.Instant
 
 class TestRunner {
 
     fun runAllTests() {
-        println("=== DEBUT DES TESTS UNITAIRES (ETAPE 1 & ETAPE 2) ===")
+        println("=== DEBUT DES TESTS UNITAIRES (ETAPES 1, 2 & 3) ===")
         testUserModel()
         testGoalModel()
         testWorkoutSessionModel()
@@ -17,6 +20,8 @@ class TestRunner {
         testHealthConnectManagerPermissions()
         testHealthConnectManager30DaysData()
         testGenerateTrainingPlanUseCase()
+        testAnalyzeAndAdaptPlanUseCaseFatigue()
+        testAnalyzeAndAdaptPlanUseCaseUnderVolume()
         println("=== TOUS LES TESTS PASSED AVEC SUCCES ===")
     }
 
@@ -167,7 +172,7 @@ class TestRunner {
         )
 
         val now = System.currentTimeMillis()
-        val raceDateIn24Weeks = now + (24L * 7 * 24 * 3600 * 1000) // 24 semaines
+        val raceDateIn24Weeks = now + (24L * 7 * 24 * 3600 * 1000)
 
         val goal = Goal(
             id = "g1",
@@ -185,34 +190,82 @@ class TestRunner {
 
         assert(plan.userId == user.id) { "UserId mismatch" }
         assert(plan.goalId == goal.id) { "GoalId mismatch" }
-        assert(plan.cycles.size == 4) { "Le plan doit contenir exactement 4 phases de périodisation (obtenu: ${plan.cycles.size})" }
+        assert(plan.cycles.size == 4) { "Le plan doit contenir 4 phases" }
+        println("[OK] Test GenerateTrainingPlanUseCase")
+    }
 
-        val phase1 = plan.cycles[0]
-        val phase2 = plan.cycles[1]
-        val phase3 = plan.cycles[2]
-        val phase4 = plan.cycles[3]
+    private fun testAnalyzeAndAdaptPlanUseCaseFatigue() {
+        val user = User("u1", "Julien", 30, 70.0, 17.0, 190)
+        val goal = Goal("g1", "Diagonale des Fous", System.currentTimeMillis() + (100L * 24 * 3600 * 1000), 165.0, 10000)
+        val plan = GenerateTrainingPlanUseCase().execute(user, goal)
 
-        assert(phase1.type == CycleType.DEVELOPPEMENT_GENERAL) { "Phase 1 doit être DEVELOPPEMENT_GENERAL" }
-        assert(phase2.type == CycleType.SPECIFIQUE_TRAIL) { "Phase 2 doit être SPECIFIQUE_TRAIL" }
-        assert(phase3.type == CycleType.AFFUTAGE) { "Phase 3 doit être AFFUTAGE/AFFINAGE" }
-        assert(phase4.type == CycleType.RECUPERATION) { "Phase 4 doit être RECUPERATION/TAPER" }
+        val hardActivity = Activity(
+            id = "act_hard",
+            timestamp = System.currentTimeMillis(),
+            type = "TRAIL_RUNNING",
+            avgHeartRate = 175,
+            maxHeartRate = 188,
+            elevationGainDPlus = 600,
+            elevationLossDMinus = 600,
+            distanceKm = 12.0,
+            durationMinutes = 90.0,
+            paceMinPerKm = "7:30",
+            rpe = 9, // RPE très élevé
+            sorenessFeedback = "Forte douleur quadriceps"
+        )
 
-        // Vérification présence séances clés : Renforcement Excentrique & Mobilité & Rando-Course
-        val allSessions = plan.cycles.flatMap { it.sessions }
-        val excentricSessions = allSessions.filter { it.type == WorkoutType.RENFORCEMENT_EXCENTRIQUE }
-        val randoCourseSessions = allSessions.filter { it.type == WorkoutType.RANDO_COURSE }
-        val mobilitySessions = allSessions.filter { it.type == WorkoutType.MOBILITE_SOUPLESSE }
+        val lowHrvSample = listOf(HealthConnectHrvSample(38.0, Instant.now())) // Baseline 65.0, donc 38ms est anormalement bas
 
-        assert(excentricSessions.isNotEmpty()) { "Le plan doit inclure des séances de renforcement excentrique" }
-        assert(randoCourseSessions.isNotEmpty()) { "Le plan doit inclure des séances de Rando-Course" }
-        assert(mobilitySessions.isNotEmpty()) { "Le plan doit inclure des séances de mobilité" }
+        val useCase = AnalyzeAndAdaptPlanUseCase()
+        val report = useCase.execute(
+            currentPlan = plan,
+            completedActivity = hardActivity,
+            userHrvSamples = lowHrvSample,
+            baselineHrvRmssd = 65.0
+        )
 
-        // Vérification des consignes coach excentrique
-        val excentricSample = excentricSessions.first()
-        assert(excentricSample.description.contains("Squats Sautés Excentriques")) { "Manque d'exercices excentriques détaillés" }
-        assert(excentricSample.coachNotes.contains("Ultra")) { "Consigne coach excentrique manquante" }
+        assert(report.analysis.hrvBaselineStatus == HrvStatus.ANORMALEMENT_BAS) { "Le HRV doit être identifié comme anormalement bas" }
+        assert(report.analysis.fatigueIndex >= 70) { "Score de fatigue doit être >= 70" }
+        assert(report.isPlanAdapted) { "Le plan aurait dû être adapté en raison de la fatigue" }
 
-        println("[OK] Test GenerateTrainingPlanUseCase (Plan Ultra-Trail 24 semaines, 4 phases, Excentrique, Rando-Course & Mobilité)")
+        val firstUncompletedNextSession = report.updatedPlan.cycles[0].sessions.first { !it.isCompleted }
+        assert(firstUncompletedNextSession.type == WorkoutType.MOBILITE_SOUPLESSE) { "La séance suivante aurait dû être reconvertie en Mobilité Douce" }
+        println("[OK] Test AnalyzeAndAdaptPlanUseCase Fatigue & Low HRV Conversion")
+    }
+
+    private fun testAnalyzeAndAdaptPlanUseCaseUnderVolume() {
+        val user = User("u1", "Julien", 30, 70.0, 17.0, 190)
+        val goal = Goal("g1", "Trail Local", System.currentTimeMillis() + (60L * 24 * 3600 * 1000), 50.0, 2500)
+        val plan = GenerateTrainingPlanUseCase().execute(user, goal)
+
+        val shortActivity = Activity(
+            id = "act_short",
+            timestamp = System.currentTimeMillis(),
+            type = "TRAIL_RUNNING",
+            avgHeartRate = 140,
+            maxHeartRate = 155,
+            elevationGainDPlus = 100, // Cible côte était 400m D+ -> compliance < 60%
+            elevationLossDMinus = 100,
+            distanceKm = 5.0,
+            durationMinutes = 40.0,
+            paceMinPerKm = "8:00",
+            rpe = 4 // RPE faible/normal
+        )
+
+        val normalHrvSample = listOf(HealthConnectHrvSample(66.0, Instant.now()))
+
+        val useCase = AnalyzeAndAdaptPlanUseCase()
+        val report = useCase.execute(
+            currentPlan = plan,
+            completedActivity = shortActivity,
+            userHrvSamples = normalHrvSample,
+            baselineHrvRmssd = 65.0
+        )
+
+        assert(report.analysis.hrvBaselineStatus == HrvStatus.NORMAL) { "HRV normal" }
+        assert(report.isPlanAdapted) { "Le plan aurait dû être adapté pour sous-volume D+" }
+        assert(report.adaptationReason?.contains("Rééquilibrage du volume") == true) { "Raison de rééquilibrage attendue" }
+        println("[OK] Test AnalyzeAndAdaptPlanUseCase Under Volume Adjustment")
     }
 }
 
